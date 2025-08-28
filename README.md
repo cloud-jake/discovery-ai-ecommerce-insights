@@ -57,7 +57,8 @@ Sample scripts to verify data quality
 
 ## Catalog Data Quality
 
-```WITH CATALOG_DATA AS (
+```
+WITH CATALOG_DATA AS (
 SELECT 
   -- Splits the string and gets the 6th element (index 5)
   SPLIT(name, '/')[SAFE_OFFSET(5)] AS catalog_name,
