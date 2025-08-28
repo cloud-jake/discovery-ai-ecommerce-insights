@@ -49,3 +49,43 @@ Run the 2 scripts in order to create the BQ dataset for the retail API export, e
 
 [Get dashboards that show key performance indicators | Retail | Google Cloud](https://cloud.google.com/retail/docs/get-dashboards-that-show-kpis#install-the-looker-block)
 
+
+
+# Data Quality Querying
+
+Sample scripts to verify data quality
+
+## Catalog Data Quality
+
+```WITH CATALOG_DATA AS (
+SELECT 
+  -- Splits the string and gets the 6th element (index 5)
+  SPLIT(name, '/')[SAFE_OFFSET(5)] AS catalog_name,
+
+  -- Splits the string and gets the 8th element (index 7)
+  SPLIT(name, '/')[SAFE_OFFSET(7)] AS branch_id,
+  *
+FROM `retail_data.export_retail_products` 
+),
+UPDATE_MAX AS (
+  SELECT name, MAX(update_time) AS max_update_time
+  FROM `retail_data.export_retail_products` 
+  GROUP BY 1
+  ORDER BY 2 DESC
+),
+GET_MAX_CATALOG AS (
+  SELECT CD.* FROM CATALOG_DATA CD
+  LEFT JOIN UPDATE_MAX UM
+  ON cd.name = um.name
+  AND cd.update_time = um.max_update_time
+  WHERE max_update_time IS NOT NULL 
+  AND delete_time = TIMESTAMP("1970-01-01 00:00:00 UTC") 
+)
+
+SELECT *
+FROM GET_MAX_CATALOG
+WHERE type IN ("PRIMARY","VARIANT")
+-- AND branch_id = "0"
+```
+
+## User Event Data Quality
